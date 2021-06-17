@@ -141,6 +141,24 @@ func (g *game) won() (bool, player) {
 	return false, -1
 }
 
+func (g *game) printWinningPlayer(winner player) {
+	winnerSymbol := "O"
+	if winner == 0 {
+		winnerSymbol = "X"
+	}
+	fmt.Printf("Congrats to player %v. You are a winner!\n", winnerSymbol)
+}
+
+// boardFull returns true if no more moves are possible
+func (g *game) boardFull() bool {
+	for _, val := range g.Board[0] {
+		if val == " " {
+			return false
+		}
+	}
+	return true
+}
+
 func main() {
 	fmt.Printf("Let's play 4 wins!\nThe top line indicates the rows you can choose\n")
 	var g game
@@ -150,8 +168,7 @@ func main() {
 	ioReader := bufio.NewReader(os.Stdin)
 
 	// game loop
-	gameFinished := false
-	for !gameFinished {
+	for !g.boardFull() {
 		// players do action
 		columnSelected := g.selectMove(ioReader)
 		err := g.doMove(columnSelected)
@@ -159,7 +176,12 @@ func main() {
 			continue
 		}
 		g.printBoard()
-		gameFinished, _ = g.won()
+		gameFinished, winningPlayer := g.won()
+		if gameFinished {
+			g.printWinningPlayer(winningPlayer)
+			return
+		}
 		g.alternatePlayersTurn()
 	}
+	fmt.Println("Board full. Game ends")
 }
