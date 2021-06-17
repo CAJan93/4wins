@@ -105,13 +105,35 @@ func (g *game) selectMove(reader *bufio.Reader) int {
 	return g.selectComputerMove()
 }
 
-// doMove does executes a selected move on the board
-func (g *game) doMove(column int) {
-	if g.PlayersTurn == 0 {
-		g.Board[0][column] = "X"
-		return
+// fall simulates the falling of the token in the column
+// It returns the row in which the token will rest or
+// an error if this column is already full
+func (g *game) fall(column int) (int, error) {
+	if g.Board[0][column] != " " {
+		return 0, fmt.Errorf("column %v is already full", column)
 	}
-	g.Board[0][column] = "O"
+	for row := 0; row < len(g.Board); row++ {
+		if g.Board[row][column] != " " {
+			return row - 1, nil
+		}
+	}
+	return len(g.Board) - 1, nil
+}
+
+// doMove does executes a selected move on the board
+// returns an error if the selected column is already full
+func (g *game) doMove(column int) error {
+	row, err := g.fall(column)
+	if err != nil {
+		fmt.Printf("Column %v already full. Choose again\n", column)
+		return err
+	}
+	if g.PlayersTurn == 0 {
+		g.Board[row][column] = "X"
+	} else {
+		g.Board[row][column] = "O"
+	}
+	return nil
 }
 
 // TODO
@@ -120,7 +142,7 @@ func (g *game) won() (bool, player) {
 }
 
 func main() {
-	fmt.Printf("Let's play 4 wins!\nThe top line indicates the rows you can choose")
+	fmt.Printf("Let's play 4 wins!\nThe top line indicates the rows you can choose\n")
 	var g game
 	g.init()
 	g.printHelp()
@@ -132,7 +154,10 @@ func main() {
 	for !gameFinished {
 		// players do action
 		columnSelected := g.selectMove(ioReader)
-		g.doMove(columnSelected)
+		err := g.doMove(columnSelected)
+		if err != nil {
+			continue
+		}
 		g.printBoard()
 		gameFinished, _ = g.won()
 		g.alternatePlayersTurn()
