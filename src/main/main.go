@@ -10,15 +10,26 @@ import (
 	"time"
 )
 
-// 5 x 6 game
 type game struct {
 	Board       [][]string
 	PlayersTurn player
+	Width       int
+	Height      int
 }
 
 type player int
 
+type direction int
+
+const (
+	Horizontal direction = iota
+	Vertical             = iota
+	Diagonal             = iota
+)
+
 // TODO: Map a player to X or O
+
+// TODO: Move Board struct and methods to other file
 
 // printHelp diplays a helper message
 func (g *game) printHelp() {
@@ -30,7 +41,6 @@ func (g *game) printHelp() {
 		out += " |"
 	}
 	fmt.Println(out)
-	g.printBoard()
 }
 
 // alternatePlayersTurn alternates the player whose move it is
@@ -60,9 +70,11 @@ func (g *game) printBoard() {
 // init initializes the board and sets all fields to " "
 func (g *game) init() {
 	g.PlayersTurn = 1
-	g.Board = make([][]string, 6)
+	g.Width = 6
+	g.Height = 8
+	g.Board = make([][]string, g.Height)
 	for i, _ := range g.Board {
-		g.Board[i] = make([]string, 5)
+		g.Board[i] = make([]string, g.Width)
 		for j, _ := range g.Board[i] {
 			g.Board[i][j] = " "
 		}
@@ -85,8 +97,8 @@ func (g *game) selectHumanMove(reader *bufio.Reader) (int, error) {
 	if err != nil {
 		return -1, err
 	}
-	if userInput < 0 || userInput > 4 {
-		return -1, fmt.Errorf("please select a number between 0 and 4 inclusive")
+	if userInput < 0 || userInput >= g.Width {
+		return -1, fmt.Errorf("please select a number between 0 and %v inclusive", g.Width-1)
 	}
 	return userInput, nil
 }
@@ -136,8 +148,87 @@ func (g *game) doMove(column int) error {
 	return nil
 }
 
-// TODO
+// checkNextXHorizontal checks if the next k horizontal to the right
+// fields are equal to playerString
+// Returns false, if out of bound
+// If xPos is 0, the fields 1, 2, and 3 ill be looked at
+func (g *game) checkNextXHorizontal(playerSting string, k int, xPos int, yPos int) bool {
+	// if out of bound return false
+	if xPos+1+k >= g.Width {
+		return false
+	}
+
+	for i := 1; i <= k; i++ {
+		if g.Board[yPos][xPos+i] != playerSting {
+			return false
+		}
+	}
+	return true
+}
+
+// checkNextXVertical checks if the next k horizontal to the bottom
+// fields are equal to playerString
+// Returns false, if out of bound
+// If yPos is 0, the fields 1, 2, and 3 ill be looked at
+func (g *game) checkNextXVertical(playerSting string, k int, xPos int, yPos int) bool {
+	// if out of bound return false
+	if yPos+1+k >= g.Height {
+		return false
+	}
+
+	for i := 1; i <= k; i++ {
+		if g.Board[yPos+i][xPos] != playerSting {
+			return false
+		}
+	}
+	return true
+}
+
+// CheckNextX checks if the next k horizontal to the bottom
+// fields are equal to playerString
+// Returns false, if out of bound
+// If yPos is 0, the fields 1, 2, and 3 ill be looked at
+func (g *game) CheckNextX(playerString string, k int, xPos int, yPos int, d direction) bool {
+	if d == Horizontal {
+		return g.checkNextXHorizontal(playerString, k, xPos, yPos)
+	}
+	if d == Vertical {
+		return g.checkNextXVertical(playerString, k, xPos, yPos)
+	}
+	if d == Diagonal {
+		panic(fmt.Sprintf("diagonal currently not supported"))
+	}
+	panic(fmt.Sprintf("Unsupported direction %v", d))
+}
+
+// won returns the winning player and true
+// if no player won, it returns false
 func (g *game) won() (bool, player) {
+	for yPos := 0; yPos < g.Height; yPos++ {
+		for xPos := 0; xPos < g.Width; xPos++ {
+			// TODO: Map player to strings here
+
+			// horizontal
+			if g.CheckNextX("X", 3, xPos, yPos, Horizontal) {
+				return true, 0
+			}
+			if g.CheckNextX("Y", 3, xPos, yPos, Horizontal) {
+				return true, 1
+			}
+
+			// vertical
+			if g.CheckNextX("X", 3, xPos, yPos, Vertical) {
+				return true, 0
+			}
+			if g.CheckNextX("Y", 3, xPos, yPos, Vertical) {
+				return true, 1
+			}
+
+			// diagonal
+			// TODO
+		}
+	}
+
 	return false, -1
 }
 
@@ -163,7 +254,6 @@ func main() {
 	fmt.Printf("Let's play 4 wins!\nThe top line indicates the rows you can choose\n")
 	var g game
 	g.init()
-	g.printHelp()
 
 	ioReader := bufio.NewReader(os.Stdin)
 
@@ -175,6 +265,7 @@ func main() {
 		if err != nil {
 			continue
 		}
+		g.printHelp()
 		g.printBoard()
 		gameFinished, winningPlayer := g.won()
 		if gameFinished {
