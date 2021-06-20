@@ -196,7 +196,7 @@ func (g *game) CheckNextX(playerString string, k int, xPos int, yPos int, d dire
 		return g.checkNextXVertical(playerString, k, xPos, yPos)
 	}
 	if d == Diagonal {
-		panic(fmt.Sprintf("diagonal currently not supported"))
+		panic("diagonal currently not supported")
 	}
 	panic(fmt.Sprintf("Unsupported direction %v", d))
 }
