@@ -40,6 +40,7 @@ func playerIntToStrig(p int) string {
 	return playerToString(player(p))
 }
 
+// TODO: Remove this function?
 // stringToPlayer provides mapping from a string to a player
 func stringToPlayer(s string) player {
 	for i, val := range playerMapping {
@@ -168,14 +169,14 @@ func (g *game) doMove(column int) error {
 // checkNextXHorizontal checks if the next k horizontal to the right
 // fields are equal to playerString
 // Returns false, if out of bound
-// If xPos is 0, the fields 1, 2, and 3 ill be looked at
+// If xPos is 0, the fields 1, 2, and 3 will be looked at
 func (g *game) checkNextXHorizontal(playerSting string, k int, xPos int, yPos int) bool {
 	// if out of bound return false
-	if xPos+1+k >= g.Width {
+	if xPos+k >= g.Width {
 		return false
 	}
 
-	for i := 1; i <= k; i++ {
+	for i := 0; i < k; i++ {
 		if g.Board[yPos][xPos+i] != playerSting {
 			return false
 		}
@@ -186,14 +187,14 @@ func (g *game) checkNextXHorizontal(playerSting string, k int, xPos int, yPos in
 // checkNextXVertical checks if the next k horizontal to the bottom
 // fields are equal to playerString
 // Returns false, if out of bound
-// If yPos is 0, the fields 1, 2, and 3 ill be looked at
+// If yPos is 0, the fields 1, 2, and 3 will be looked at
 func (g *game) checkNextXVertical(playerSting string, k int, xPos int, yPos int) bool {
 	// if out of bound return false
-	if yPos+1+k >= g.Height {
+	if yPos+k >= g.Height {
 		return false
 	}
 
-	for i := 1; i <= k; i++ {
+	for i := 0; i < k; i++ {
 		if g.Board[yPos+i][xPos] != playerSting {
 			return false
 		}
@@ -201,10 +202,47 @@ func (g *game) checkNextXVertical(playerSting string, k int, xPos int, yPos int)
 	return true
 }
 
-// CheckNextX checks if the next k horizontal to the bottom
+// TODO: Test diagonal winnings
+
+// checkNextXVertical checks if the next k diagonal to the bottom right
 // fields are equal to playerString
 // Returns false, if out of bound
-// If yPos is 0, the fields 1, 2, and 3 ill be looked at
+// If yPos and xPos are both 0, the fields 1,1, 2,2, and 3,3 will be looked at
+func (g *game) checkNextXDiagonalDown(playerSting string, k int, xPos int, yPos int) bool {
+	// if out of bound return false
+	if yPos+k >= g.Height || xPos+k >= g.Width {
+		return false
+	}
+
+	for i := 0; i < k; i++ {
+		if g.Board[yPos+i][xPos+i] != playerSting {
+			return false
+		}
+	}
+	return true
+}
+
+// checkNextXVertical checks if the next k diagonal to the top right
+// fields are equal to playerString
+// Returns false, if out of bound
+// If yPos and xPos are both 0, the fields 1,1, 2,2, and 3,3 will be looked at
+func (g *game) checkNextXDiagonalUp(playerSting string, k int, xPos int, yPos int) bool {
+	// if out of bound return false
+	if yPos-k > 0 || xPos+k >= g.Width {
+		return false
+	}
+
+	for i := 0; i < k; i++ {
+		if g.Board[yPos-i][xPos+i] != playerSting {
+			return false
+		}
+	}
+	return true
+}
+
+// CheckNextX checks if the next k in a given direction
+// fields are equal to playerString
+// Returns false, if out of bound
 func (g *game) CheckNextX(playerString string, k int, xPos int, yPos int, d direction) bool {
 	if d == Horizontal {
 		return g.checkNextXHorizontal(playerString, k, xPos, yPos)
@@ -213,7 +251,8 @@ func (g *game) CheckNextX(playerString string, k int, xPos int, yPos int, d dire
 		return g.checkNextXVertical(playerString, k, xPos, yPos)
 	}
 	if d == Diagonal {
-		panic("diagonal currently not supported")
+		return g.checkNextXDiagonalDown(playerString, k, xPos, yPos) ||
+			g.checkNextXDiagonalUp(playerString, k, xPos, yPos)
 	}
 	panic(fmt.Sprintf("Unsupported direction %v", d))
 }
@@ -227,32 +266,28 @@ func (g *game) won() (bool, player) {
 
 			// horizontal
 			for i := 0; i <= 1; i++ {
-				if g.CheckNextX(playerIntToStrig(i), 3, xPos, yPos, Horizontal) {
+				if g.CheckNextX(playerIntToStrig(i), 4, xPos, yPos, Horizontal) {
 					return true, player(i)
 				}
 			}
 
 			// vertical
 			for i := 0; i <= 1; i++ {
-				if g.CheckNextX(playerIntToStrig(i), 3, xPos, yPos, Vertical) {
+				if g.CheckNextX(playerIntToStrig(i), 4, xPos, yPos, Vertical) {
 					return true, player(i)
 				}
 			}
 
 			// diagonal
-			// TODO
+			for i := 0; i <= 1; i++ {
+				if g.CheckNextX(playerIntToStrig(i), 4, xPos, yPos, Diagonal) {
+					return true, player(i)
+				}
+			}
 		}
 	}
 
 	return false, -1
-}
-
-func (g *game) printWinningPlayer(winner player) {
-	winnerSymbol := "O"
-	if winner == 0 {
-		winnerSymbol = "X"
-	}
-	fmt.Printf("Congrats to player %v. You are a winner!\n", winnerSymbol)
 }
 
 // boardFull returns true if no more moves are possible
@@ -282,9 +317,9 @@ func main() {
 		}
 		g.printHelp()
 		g.printBoard()
-		gameFinished, winningPlayer := g.won()
+		gameFinished, winner := g.won()
 		if gameFinished {
-			g.printWinningPlayer(winningPlayer)
+			fmt.Printf("Congrats to player %v. You are a winner!\n", playerToString(winner))
 			return
 		}
 		g.alternatePlayersTurn()
