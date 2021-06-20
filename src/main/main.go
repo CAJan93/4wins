@@ -22,12 +22,33 @@ type player int
 type direction int
 
 const (
-	Horizontal direction = iota
-	Vertical             = iota
-	Diagonal             = iota
+	Horizontal    direction = iota
+	Vertical                = iota
+	Diagonal                = iota
+	noPlayerValue           = " "
 )
 
-// TODO: Map a player to X or O
+var playerMapping = [...]string{"X", "O"}
+
+// playerToString provides mapping for player to string
+func playerToString(p player) string {
+	return playerMapping[p]
+}
+
+// playerIntToStrig is a wrapper for playerToString
+func playerIntToStrig(p int) string {
+	return playerToString(player(p))
+}
+
+// stringToPlayer provides mapping from a string to a player
+func stringToPlayer(s string) player {
+	for i, val := range playerMapping {
+		if val == s {
+			return player(i)
+		}
+	}
+	panic("Unsupported player")
+}
 
 // TODO: Move Board struct and methods to other file
 
@@ -36,7 +57,7 @@ func (g *game) printHelp() {
 	fmt.Printf("\n%v\n", strings.Repeat("-", len(g.Board[0])*4+1))
 	out := "|"
 	for i := range g.Board[0] {
-		out += " "
+		out += noPlayerValue
 		out += strconv.Itoa(i)
 		out += " |"
 	}
@@ -58,7 +79,7 @@ func (g *game) printBoard() {
 	for i, _ := range g.Board {
 		out := "|"
 		for j, _ := range g.Board[i] {
-			out += " "
+			out += noPlayerValue
 			out += g.Board[i][j]
 			out += " |"
 		}
@@ -67,7 +88,7 @@ func (g *game) printBoard() {
 	}
 }
 
-// init initializes the board and sets all fields to " "
+// init initializes the board and sets all fields to noPlayerValue
 func (g *game) init() {
 	g.PlayersTurn = 1
 	g.Width = 6
@@ -76,7 +97,7 @@ func (g *game) init() {
 	for i, _ := range g.Board {
 		g.Board[i] = make([]string, g.Width)
 		for j, _ := range g.Board[i] {
-			g.Board[i][j] = " "
+			g.Board[i][j] = noPlayerValue
 		}
 	}
 }
@@ -121,11 +142,11 @@ func (g *game) selectMove(reader *bufio.Reader) int {
 // It returns the row in which the token will rest or
 // an error if this column is already full
 func (g *game) fall(column int) (int, error) {
-	if g.Board[0][column] != " " {
+	if g.Board[0][column] != noPlayerValue {
 		return 0, fmt.Errorf("column %v is already full", column)
 	}
 	for row := 0; row < len(g.Board); row++ {
-		if g.Board[row][column] != " " {
+		if g.Board[row][column] != noPlayerValue {
 			return row - 1, nil
 		}
 	}
@@ -140,11 +161,7 @@ func (g *game) doMove(column int) error {
 		fmt.Printf("Column %v already full. Choose again\n", column)
 		return err
 	}
-	if g.PlayersTurn == 0 {
-		g.Board[row][column] = "X"
-	} else {
-		g.Board[row][column] = "O"
-	}
+	g.Board[row][column] = playerToString(g.PlayersTurn)
 	return nil
 }
 
@@ -209,19 +226,17 @@ func (g *game) won() (bool, player) {
 			// TODO: Map player to strings here
 
 			// horizontal
-			if g.CheckNextX("X", 3, xPos, yPos, Horizontal) {
-				return true, 0
-			}
-			if g.CheckNextX("Y", 3, xPos, yPos, Horizontal) {
-				return true, 1
+			for i := 0; i <= 1; i++ {
+				if g.CheckNextX(playerIntToStrig(i), 3, xPos, yPos, Horizontal) {
+					return true, player(i)
+				}
 			}
 
 			// vertical
-			if g.CheckNextX("X", 3, xPos, yPos, Vertical) {
-				return true, 0
-			}
-			if g.CheckNextX("Y", 3, xPos, yPos, Vertical) {
-				return true, 1
+			for i := 0; i <= 1; i++ {
+				if g.CheckNextX(playerIntToStrig(i), 3, xPos, yPos, Vertical) {
+					return true, player(i)
+				}
 			}
 
 			// diagonal
@@ -243,7 +258,7 @@ func (g *game) printWinningPlayer(winner player) {
 // boardFull returns true if no more moves are possible
 func (g *game) boardFull() bool {
 	for _, val := range g.Board[0] {
-		if val == " " {
+		if val == noPlayerValue {
 			return false
 		}
 	}
