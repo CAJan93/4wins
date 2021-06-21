@@ -1,4 +1,4 @@
-package main
+package game
 
 import (
 	"bufio"
@@ -300,10 +300,15 @@ func (g *game) boardFull() bool {
 	return true
 }
 
-func main() {
-	fmt.Printf("Let's play 4 wins!\nThe top line indicates the rows you can choose\n")
+func getNewGame() game {
 	var g game
 	g.init()
+	return g
+}
+
+func main() {
+	fmt.Printf("Let's play 4 wins!\nThe top line indicates the rows you can choose\n")
+	g := getNewGame()
 
 	ioReader := bufio.NewReader(os.Stdin)
 
