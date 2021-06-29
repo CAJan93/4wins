@@ -1,4 +1,4 @@
-package game
+package main
 
 import (
 	"bufio"
@@ -166,13 +166,13 @@ func (g *game) doMove(column int) error {
 	return nil
 }
 
-// checkNextXHorizontal checks if the next k horizontal to the right
+// checkKHorizontal checks if the next k horizontal to the right
 // fields are equal to playerString
 // Returns false, if out of bound
-// If xPos is 0, the fields 1, 2, and 3 will be looked at
-func (g *game) checkNextXHorizontal(playerSting string, k int, xPos int, yPos int) bool {
+// If xPos is 0, the fields 0, 1, 2, and 3 will be looked at
+func (g *game) checkKHorizontal(playerSting string, k int, xPos int, yPos int) bool {
 	// if out of bound return false
-	if xPos+k >= g.Width {
+	if xPos+k-1 >= g.Width {
 		return false
 	}
 
@@ -184,13 +184,13 @@ func (g *game) checkNextXHorizontal(playerSting string, k int, xPos int, yPos in
 	return true
 }
 
-// checkNextXVertical checks if the next k horizontal to the bottom
+// checkKVertical checks if the next k horizontal to the bottom
 // fields are equal to playerString
 // Returns false, if out of bound
-// If yPos is 0, the fields 1, 2, and 3 will be looked at
-func (g *game) checkNextXVertical(playerSting string, k int, xPos int, yPos int) bool {
+// If yPos is 0, the fields 0, 1, 2, and 3 will be looked at
+func (g *game) checkKVertical(playerSting string, k int, xPos int, yPos int) bool {
 	// if out of bound return false
-	if yPos+k >= g.Height {
+	if yPos+k-1 >= g.Height {
 		return false
 	}
 
@@ -208,9 +208,9 @@ func (g *game) checkNextXVertical(playerSting string, k int, xPos int, yPos int)
 // fields are equal to playerString
 // Returns false, if out of bound
 // If yPos and xPos are both 0, the fields 1,1, 2,2, and 3,3 will be looked at
-func (g *game) checkNextXDiagonalDown(playerSting string, k int, xPos int, yPos int) bool {
+func (g *game) checkKDiagonalDown(playerSting string, k int, xPos int, yPos int) bool {
 	// if out of bound return false
-	if yPos+k >= g.Height || xPos+k >= g.Width {
+	if yPos+k-1 >= g.Height || xPos+k >= g.Width {
 		return false
 	}
 
@@ -226,9 +226,9 @@ func (g *game) checkNextXDiagonalDown(playerSting string, k int, xPos int, yPos 
 // fields are equal to playerString
 // Returns false, if out of bound
 // If yPos and xPos are both 0, the fields 1,1, 2,2, and 3,3 will be looked at
-func (g *game) checkNextXDiagonalUp(playerSting string, k int, xPos int, yPos int) bool {
+func (g *game) checkKDiagonalUp(playerSting string, k int, xPos int, yPos int) bool {
 	// if out of bound return false
-	if yPos-k > 0 || xPos+k >= g.Width {
+	if yPos-k-1 > 0 || xPos+k-1 >= g.Width {
 		return false
 	}
 
@@ -240,19 +240,17 @@ func (g *game) checkNextXDiagonalUp(playerSting string, k int, xPos int, yPos in
 	return true
 }
 
-// CheckNextX checks if the next k in a given direction
+// checkNextX checks if the next k in a given direction
 // fields are equal to playerString
 // Returns false, if out of bound
-func (g *game) CheckNextX(playerString string, k int, xPos int, yPos int, d direction) bool {
+func (g *game) checkNextX(playerString string, k int, xPos int, yPos int, d direction) bool {
 	if d == Horizontal {
-		return g.checkNextXHorizontal(playerString, k, xPos, yPos)
-	}
-	if d == Vertical {
-		return g.checkNextXVertical(playerString, k, xPos, yPos)
-	}
-	if d == Diagonal {
-		return g.checkNextXDiagonalDown(playerString, k, xPos, yPos) ||
-			g.checkNextXDiagonalUp(playerString, k, xPos, yPos)
+		return g.checkKHorizontal(playerString, k, xPos, yPos)
+	} else if d == Vertical {
+		return g.checkKVertical(playerString, k, xPos, yPos)
+	} else if d == Diagonal {
+		return g.checkKDiagonalDown(playerString, k, xPos, yPos) ||
+			g.checkKDiagonalUp(playerString, k, xPos, yPos)
 	}
 	panic(fmt.Sprintf("Unsupported direction %v", d))
 }
@@ -266,21 +264,21 @@ func (g *game) won() (bool, player) {
 
 			// horizontal
 			for i := 0; i <= 1; i++ {
-				if g.CheckNextX(playerIntToStrig(i), 4, xPos, yPos, Horizontal) {
+				if g.checkNextX(playerIntToStrig(i), 4, xPos, yPos, Horizontal) {
 					return true, player(i)
 				}
 			}
 
 			// vertical
 			for i := 0; i <= 1; i++ {
-				if g.CheckNextX(playerIntToStrig(i), 4, xPos, yPos, Vertical) {
+				if g.checkNextX(playerIntToStrig(i), 4, xPos, yPos, Vertical) {
 					return true, player(i)
 				}
 			}
 
 			// diagonal
 			for i := 0; i <= 1; i++ {
-				if g.CheckNextX(playerIntToStrig(i), 4, xPos, yPos, Diagonal) {
+				if g.checkNextX(playerIntToStrig(i), 4, xPos, yPos, Diagonal) {
 					return true, player(i)
 				}
 			}
