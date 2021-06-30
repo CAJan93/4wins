@@ -32,6 +32,17 @@ func TestCheckNextXHorizontal(t *testing.T) {
 	g.init()
 }
 
+func Test_selectComputerMove(t *testing.T) {
+	var g game
+	g.init()
+	for i := 0; i < 100; i++ {
+		selectedMove := g._selectComputerMove()
+		if selectedMove < 0 || selectedMove >= g.Width {
+			t.Errorf("Expected selected move to be [0, g.Width)")
+		}
+	}
+}
+
 func TestWon(t *testing.T) {
 	type testHelper struct {
 		xPos []int
@@ -57,8 +68,20 @@ func TestWon(t *testing.T) {
 		{[]int{2, 3, 4, 5}, []int{g.Height - 1, g.Height - 1, g.Height - 1, g.Height - 1}},
 
 		// vertical
+		{[]int{0, 0, 0, 0}, []int{0, 1, 2, 3}},
+		{[]int{0, 0, 0, 0}, []int{1, 2, 3, 4}},
+		{[]int{0, 0, 0, 0}, []int{2, 3, 4, 5}},
+		{[]int{0, 0, 0, 0}, []int{g.Height - 1, g.Height - 2, g.Height - 3, g.Height - 4}},
+		{[]int{g.Width - 1, g.Width - 1, g.Width - 1, g.Width - 1}, []int{0, 1, 2, 3}},
+		{[]int{g.Width - 1, g.Width - 1, g.Width - 1, g.Width - 1}, []int{1, 2, 3, 4}},
+		{[]int{g.Width - 1, g.Width - 1, g.Width - 1, g.Width - 1}, []int{2, 3, 4, 5}},
+		{[]int{g.Width - 1, g.Width - 1, g.Width - 1, g.Width - 1}, []int{g.Height - 1, g.Height - 2, g.Height - 3, g.Height - 4}},
 
 		// diagonal missing
+		{[]int{1, 2, 3, 4}, []int{1, 2, 3, 4}},
+		{[]int{2, 3, 4, 5}, []int{2, 3, 4, 5}},
+		{[]int{5, 4, 3, 2}, []int{2, 3, 4, 5}},
+		{[]int{4, 3, 2, 1}, []int{1, 2, 3, 4}},
 	}
 
 	for _, scenario := range scenarios {

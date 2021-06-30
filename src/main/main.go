@@ -103,12 +103,16 @@ func (g *game) init() {
 	}
 }
 
-// selectComputerMove selects a random number
+func (g *game) _selectComputerMove() int {
+	rand.Seed(time.Now().UnixNano())
+	return rand.Intn(g.Width)
+}
+
+// selectComputerMove is a wraper for _selectComputerMove
 func (g *game) selectComputerMove() int {
 	fmt.Println("Computer move")
 	time.Sleep(1 * time.Second)
-	rand.Seed(time.Now().UnixNano())
-	return rand.Intn(5)
+	return g._selectComputerMove()
 }
 
 // selectHumanMove gets a move from the user
@@ -204,13 +208,13 @@ func (g *game) checkKVertical(playerSting string, k int, xPos int, yPos int) boo
 
 // TODO: Test diagonal winnings
 
-// checkNextXVertical checks if the next k diagonal to the bottom right
+// checkKDiagonalDown checks if the next k diagonal to the bottom right
 // fields are equal to playerString
 // Returns false, if out of bound
 // If yPos and xPos are both 0, the fields 1,1, 2,2, and 3,3 will be looked at
 func (g *game) checkKDiagonalDown(playerSting string, k int, xPos int, yPos int) bool {
 	// if out of bound return false
-	if yPos+k-1 >= g.Height || xPos+k >= g.Width {
+	if yPos+k-1 >= g.Height || xPos+k-1 >= g.Width {
 		return false
 	}
 
@@ -222,13 +226,13 @@ func (g *game) checkKDiagonalDown(playerSting string, k int, xPos int, yPos int)
 	return true
 }
 
-// checkNextXVertical checks if the next k diagonal to the top right
+// checkKDiagonalUp checks if the next k diagonal to the top right
 // fields are equal to playerString
 // Returns false, if out of bound
 // If yPos and xPos are both 0, the fields 1,1, 2,2, and 3,3 will be looked at
 func (g *game) checkKDiagonalUp(playerSting string, k int, xPos int, yPos int) bool {
 	// if out of bound return false
-	if yPos-k-1 > 0 || xPos+k-1 >= g.Width {
+	if yPos-k+1 < 0 || xPos+k-1 >= g.Width {
 		return false
 	}
 
@@ -240,10 +244,10 @@ func (g *game) checkKDiagonalUp(playerSting string, k int, xPos int, yPos int) b
 	return true
 }
 
-// checkNextX checks if the next k in a given direction
+// checkX checks if the next k in a given direction
 // fields are equal to playerString
 // Returns false, if out of bound
-func (g *game) checkNextX(playerString string, k int, xPos int, yPos int, d direction) bool {
+func (g *game) checkX(playerString string, k int, xPos int, yPos int, d direction) bool {
 	if d == Horizontal {
 		return g.checkKHorizontal(playerString, k, xPos, yPos)
 	} else if d == Vertical {
@@ -264,21 +268,21 @@ func (g *game) won() (bool, player) {
 
 			// horizontal
 			for i := 0; i <= 1; i++ {
-				if g.checkNextX(playerIntToStrig(i), 4, xPos, yPos, Horizontal) {
+				if g.checkX(playerIntToStrig(i), 4, xPos, yPos, Horizontal) {
 					return true, player(i)
 				}
 			}
 
 			// vertical
 			for i := 0; i <= 1; i++ {
-				if g.checkNextX(playerIntToStrig(i), 4, xPos, yPos, Vertical) {
+				if g.checkX(playerIntToStrig(i), 4, xPos, yPos, Vertical) {
 					return true, player(i)
 				}
 			}
 
 			// diagonal
 			for i := 0; i <= 1; i++ {
-				if g.checkNextX(playerIntToStrig(i), 4, xPos, yPos, Diagonal) {
+				if g.checkX(playerIntToStrig(i), 4, xPos, yPos, Diagonal) {
 					return true, player(i)
 				}
 			}
