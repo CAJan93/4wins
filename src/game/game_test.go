@@ -1,31 +1,32 @@
-package main
+package game
 
 import (
 	"fmt"
+	"fourwins/main/src/misc"
 	"testing"
 )
 
 func TestUsableBoard(t *testing.T) {
-	g := getNewGame()
+	g := GetNewGame()
 	if g.Width < 4 {
 		t.Fatalf("Board has incorrect with of %v. Board with needs to be at least 4", g.Width)
 	}
 }
 
 func TestCheckNextXHorizontal(t *testing.T) {
-	g := getNewGame()
+	g := GetNewGame()
 
 	for p := 0; p <= 1; p++ {
 		for i := 0; i < 4; i++ {
-			g.Board[0][i] = playerIntToStrig(p)
+			g.Board[0][i] = misc.PlayerIntToStrig(p)
 		}
-		won, winingPlayer := g.won()
+		won, winingPlayer := g.Won()
 		if !won {
-			g.printBoard()
+			g.PrintBoard()
 			t.Error("expected game to end because player won")
-		} else if winingPlayer != player(p) {
-			g.printBoard()
-			t.Errorf("expected player %v to win", playerIntToStrig(p))
+		} else if winingPlayer != misc.Player(p) {
+			g.PrintBoard()
+			t.Errorf("expected player %v to win", misc.PlayerIntToStrig(p))
 		}
 	}
 
@@ -86,17 +87,17 @@ func TestWon(t *testing.T) {
 
 	for _, scenario := range scenarios {
 		for i, xpos := range scenario.xPos {
-			g.Board[scenario.yPos[i]][xpos] = playerIntToStrig(0)
+			g.Board[scenario.yPos[i]][xpos] = misc.PlayerIntToStrig(0)
 		}
-		won, winning_player := g.won()
+		won, winning_player := g.Won()
 		if !won {
-			g.printBoard()
+			g.PrintBoard()
 			msg := "Expected a player to have one, but was not the case. See above for game filed"
 			fmt.Println(msg)
 			t.Errorf(msg)
 		}
 		if won && int(winning_player) != 0 {
-			g.printBoard()
+			g.PrintBoard()
 			msg := "Expected a player 0 to have one, but was not the case. See above for game filed"
 			fmt.Println(msg)
 			t.Errorf(msg)
