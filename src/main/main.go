@@ -263,28 +263,16 @@ func (g *game) checkX(playerString string, k int, xPos int, yPos int, d directio
 // won returns the winning player and true
 // if no player won, it returns false
 func (g *game) won() (bool, player) {
+	// iterate over each pos in board
 	for yPos := 0; yPos < g.Height; yPos++ {
 		for xPos := 0; xPos < g.Width; xPos++ {
-			// TODO: Map player to strings here
-
-			// horizontal
-			for i := 0; i <= 1; i++ {
-				if g.checkX(playerIntToStrig(i), 4, xPos, yPos, Horizontal) {
-					return true, player(i)
-				}
-			}
-
-			// vertical
-			for i := 0; i <= 1; i++ {
-				if g.checkX(playerIntToStrig(i), 4, xPos, yPos, Vertical) {
-					return true, player(i)
-				}
-			}
-
-			// diagonal
-			for i := 0; i <= 1; i++ {
-				if g.checkX(playerIntToStrig(i), 4, xPos, yPos, Diagonal) {
-					return true, player(i)
+			// call each direction
+			for dir := 0; dir < 3; dir++ {
+				//call each player
+				for i := 0; i <= 1; i++ {
+					if g.checkX(playerIntToStrig(i), 4, xPos, yPos, direction(dir)) {
+						return true, player(i)
+					}
 				}
 			}
 		}
