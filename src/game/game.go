@@ -4,13 +4,108 @@ import (
 	"bufio"
 	"fmt"
 	"fourwins/main/src/misc"
-	"math/rand"
+	"math"
 	"strconv"
 	"strings"
 	"time"
 )
 
-type game struct {
+/// minmax ///
+// compare https://www.youtube.com/watch?v=l-hh51ncgDI
+// X wins is 1 	-> X maximizes
+// O wins is -1 -> O minimizes
+// neutral is 0
+
+// TODO: Add comments to provided functions
+
+// TODO: getall possible pos should take into account which turn it is
+// maybe also the other functions?
+
+func getAllPossiblePossitions(incomingGame Game) ([]Game, []int) {
+	var possibleGameStates []Game
+	var possibleMoves []int
+
+	for column := 0; column < incomingGame.Width; column++ {
+		tmp := incomingGame.copyBoard()
+		err := tmp.DoMove(column)
+		tmp.PrintBoard()
+		if err != nil {
+			// full column
+			continue
+		}
+		possibleGameStates = append(possibleGameStates, tmp)
+		possibleMoves = append(possibleMoves, column)
+	}
+
+	return possibleGameStates, possibleMoves
+}
+
+func _minmax(position Game, depth int, maximizingPlayer bool, lastMove int) (float64, int) {
+	// handle winning position
+	won, winningPlayer := position.Won()
+	if won {
+		// for debugging only
+		if lastMove == -1 {
+			position.PrintBoard()
+		}
+		if misc.PlayerToString(winningPlayer) == "X" {
+			return 1, lastMove
+		}
+		return -1, lastMove
+	}
+
+	// no more search space or no more game space available
+	if depth == 0 || position.BoardFull() {
+		if lastMove == -1 {
+			position.PrintBoard()
+		}
+		return 0, lastMove
+	}
+
+	if maximizingPlayer {
+		maxEval := math.Inf(-1)
+		bestMove := -1
+		gameStates, gameMoves := getAllPossiblePossitions(position)
+		if len(gameStates) == 0 {
+			panic("There should always be possible game states, or the game should be finished")
+		}
+		for i, child := range gameStates {
+			eval, _ := _minmax(child.copyBoard(), depth-1, false, gameMoves[i])
+			if eval > maxEval {
+				maxEval = eval
+				bestMove = gameMoves[i]
+			}
+		}
+		return maxEval, bestMove
+	}
+
+	minEval := math.Inf(1)
+	bestMove := -1
+	gameStates, gameMoves := getAllPossiblePossitions(position)
+	if len(gameStates) == 0 {
+		panic("There should always be possible game states, or the game should be finished")
+	}
+	for i, child := range gameStates {
+		eval, _ := _minmax(child.copyBoard(), depth-1, true, gameMoves[i])
+		if eval < minEval {
+			minEval = eval
+			bestMove = gameMoves[i]
+		}
+	}
+	return minEval, bestMove
+}
+
+func minmax(position Game, depth int, currentPlayer misc.Player) (float64, int) {
+	maximizingPlayer := false
+	if misc.PlayerIntToStrig(int(currentPlayer)) == "X" {
+		maximizingPlayer = true
+	}
+	return _minmax(position, depth, maximizingPlayer, -1)
+}
+
+/// end minmax ///
+
+type Game struct {
 	Board       [][]string
 	PlayersTurn misc.Player
 	Width       int
@@ -18,7 +113,7 @@ type game struct {
 }
 
 // PrintHelp diplays a helper message
-func (g *game) PrintHelp() {
+func (g *Game) PrintHelp() {
 	fmt.Printf("\n%v\n", strings.Repeat("-", len(g.Board[0])*4+1))
 	out := "|"
 	for i := range g.Board[0] {
@@ -29,8 +124,19 @@ func (g *game) PrintHelp() {
 	fmt.Println(out)
 }
 
+// copyBoard returns a new game with a board identical to g
+func (g *Game) copyBoard() Game {
+	newGame := GetNewGame()
+	newBoard := make([][]string, len(g.Board))
+	for i := range g.Board {
+		newBoard[i] = make([]string, len(g.Board[i]))
+		copy(newBoard[i], g.Board[i])
+	}
+	return newGame
+}
+
 // AlternatePlayersTurn alternates the player whose move it is
-func (g *game) AlternatePlayersTurn() {
+func (g *Game) AlternatePlayersTurn() {
 	if g.PlayersTurn == 0 {
 		g.PlayersTurn = 1
 		return
@@ -39,7 +145,7 @@ func (g *game) AlternatePlayersTurn() {
 }
 
 // PrintBoard pretty prints the board
-func (g *game) PrintBoard() {
+func (g *Game) PrintBoard() {
 	fmt.Println(strings.Repeat("-", len(g.Board[0])*4+1))
 	for i, _ := range g.Board {
 		out := "|"
@@ -54,7 +160,7 @@ func (g *game) PrintBoard() {
 }
 
 // init initializes the board and sets all fields to misc.NoPlayerValue
-func (g *game) init() {
+func (g *Game) init() {
 	g.PlayersTurn = 1
 	g.Width = 6
 	g.Height = 8
@@ -68,20 +174,25 @@ func (g *game) init() {
 }
 
 // _selectComputerMove selects the column the computer plays at random
-func (g *game) _selectComputerMove() int {
-	rand.Seed(time.Now().UnixNano())
-	return rand.Intn(g.Width)
+// func (g *Game) _selectComputerMove() int {
+// 	rand.Seed(time.Now().UnixNano())
+// 	return rand.Intn(g.Width)
+// }
+
+func (g *Game) _selectComputerMove() int {
+	_, column := minmax(*g, 10, g.PlayersTurn)
+	return column
 }
 
 // selectComputerMove is a wraper for _selectComputerMove
-func (g *game) selectComputerMove() int {
+func (g *Game) selectComputerMove() int {
 	fmt.Println("Computer move")
 	time.Sleep(1 * time.Second)
 	return g._selectComputerMove()
 }
 
 // selectHumanMove gets a move from the user
-func (g *game) selectHumanMove(reader *bufio.Reader) (int, error) {
+func (g *Game) selectHumanMove(reader *bufio.Reader) (int, error) {
 	fmt.Println("Please select a column")
 	var userInput int
 	_, err := fmt.Scanf("%d", &userInput)
@@ -95,7 +206,7 @@ func (g *game) selectHumanMove(reader *bufio.Reader) (int, error) {
 }
 
 // SelectMove wraps doComputerMove and doHumanMove
-func (g *game) SelectMove(reader *bufio.Reader) int {
+func (g *Game) SelectMove(reader *bufio.Reader) int {
 	if g.PlayersTurn == 0 {
 		num, err := g.selectHumanMove(reader)
 		if err != nil {
@@ -110,7 +221,7 @@ func (g *game) SelectMove(reader *bufio.Reader) int {
 // fall simulates the falling of the token in the column
 // It returns the row in which the token will rest or
 // an error if this column is already full
-func (g *game) fall(column int) (int, error) {
+func (g *Game) fall(column int) (int, error) {
 	if g.Board[0][column] != misc.NoPlayerValue {
 		return 0, fmt.Errorf("column %v is already full", column)
 	}
@@ -124,7 +235,7 @@ func (g *game) fall(column int) (int, error) {
 
 // DoMove does executes a selected move on the board
 // returns an error if the selected column is already full
-func (g *game) DoMove(column int) error {
+func (g *Game) DoMove(column int) error {
 	row, err := g.fall(column)
 	if err != nil {
 		fmt.Printf("Column %v already full. Choose again\n", column)
@@ -138,7 +249,7 @@ func (g *game) DoMove(column int) error {
 // fields are equal to playerString
 // Returns false, if out of bound
 // If xPos is 0, the fields 0, 1, 2, and 3 will be looked at
-func (g *game) checkKHorizontal(playerSting string, k int, xPos int, yPos int) bool {
+func (g *Game) checkKHorizontal(playerSting string, k int, xPos int, yPos int) bool {
 	// if out of bound return false
 	if xPos+k-1 >= g.Width {
 		return false
@@ -156,7 +267,7 @@ func (g *game) checkKHorizontal(playerSting string, k int, xPos int, yPos int) b
 // fields are equal to playerString
 // Returns false, if out of bound
 // If yPos is 0, the fields 0, 1, 2, and 3 will be looked at
-func (g *game) checkKVertical(playerSting string, k int, xPos int, yPos int) bool {
+func (g *Game) checkKVertical(playerSting string, k int, xPos int, yPos int) bool {
 	// if out of bound return false
 	if yPos+k-1 >= g.Height {
 		return false
@@ -174,7 +285,7 @@ func (g *game) checkKVertical(playerSting string, k int, xPos int, yPos int) boo
 // fields are equal to playerString
 // Returns false, if out of bound
 // If yPos and xPos are both 0, the fields 1,1, 2,2, and 3,3 will be looked at
-func (g *game) checkKDiagonalDown(playerSting string, k int, xPos int, yPos int) bool {
+func (g *Game) checkKDiagonalDown(playerSting string, k int, xPos int, yPos int) bool {
 	// if out of bound return false
 	if yPos+k-1 >= g.Height || xPos+k-1 >= g.Width {
 		return false
@@ -192,7 +303,7 @@ func (g *game) checkKDiagonalDown(playerSting string, k int, xPos int, yPos int)
 // fields are equal to playerString
 // Returns false, if out of bound
 // If yPos and xPos are both 0, the fields 1,1, 2,2, and 3,3 will be looked at
-func (g *game) checkKDiagonalUp(playerSting string, k int, xPos int, yPos int) bool {
+func (g *Game) checkKDiagonalUp(playerSting string, k int, xPos int, yPos int) bool {
 	// if out of bound return false
 	if yPos-k+1 < 0 || xPos+k-1 >= g.Width {
 		return false
@@ -209,7 +320,7 @@ func (g *game) checkKDiagonalUp(playerSting string, k int, xPos int, yPos int) b
 // checkX checks if the next k in a given direction
 // fields are equal to playerString
 // Returns false, if out of bound
-func (g *game) checkX(playerString string, k int, xPos int, yPos int, d misc.Direction) bool {
+func (g *Game) checkX(playerString string, k int, xPos int, yPos int, d misc.Direction) bool {
 	if d == misc.Horizontal {
 		return g.checkKHorizontal(playerString, k, xPos, yPos)
 	} else if d == misc.Vertical {
@@ -223,7 +334,7 @@ func (g *game) checkX(playerString string, k int, xPos int, yPos int, d misc.Dir
 
 // Won returns the winning player and true
 // if no player Won, it returns false
-func (g *game) Won() (bool, misc.Player) {
+func (g *Game) Won() (bool, misc.Player) {
 	// iterate over each pos in board
 	for yPos := 0; yPos < g.Height; yPos++ {
 		for xPos := 0; xPos < g.Width; xPos++ {
@@ -243,7 +354,7 @@ func (g *game) Won() (bool, misc.Player) {
 }
 
 // BoardFull returns true if no more moves are possible
-func (g *game) BoardFull() bool {
+func (g *Game) BoardFull() bool {
 	for _, val := range g.Board[0] {
 		if val == misc.NoPlayerValue {
 			return false
@@ -252,8 +363,8 @@ func (g *game) BoardFull() bool {
 	return true
 }
 
-func GetNewGame() game {
-	var g game
+func GetNewGame() Game {
+	var g Game
 	g.init()
 	return g
 }
