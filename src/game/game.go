@@ -21,6 +21,8 @@ import (
 // TODO: getall possible pos should take into account which turn it is
 // maybe also the other functions?
 
+// TODO: for some reason the computer always uses column 0. No idea why
+
 func getAllPossiblePossitions(incomingGame Game) ([]Game, []int) {
 	var possibleGameStates []Game
 	var possibleMoves []int
@@ -28,7 +30,6 @@ func getAllPossiblePossitions(incomingGame Game) ([]Game, []int) {
 	for column := 0; column < incomingGame.Width; column++ {
 		tmp := incomingGame.copyBoard()
 		err := tmp.DoMove(column)
-		tmp.PrintBoard()
 		if err != nil {
 			// full column
 			continue
@@ -180,7 +181,7 @@ func (g *Game) init() {
 // }
 
 func (g *Game) _selectComputerMove() int {
-	_, column := minmax(*g, 10, g.PlayersTurn)
+	_, column := minmax(*g, 3, g.PlayersTurn)
 	return column
 }
 
