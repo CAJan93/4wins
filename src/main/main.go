@@ -103,6 +103,7 @@ func (g *game) init() {
 	}
 }
 
+// _selectComputerMove selects the column the computer plays at random
 func (g *game) _selectComputerMove() int {
 	rand.Seed(time.Now().UnixNano())
 	return rand.Intn(g.Width)
