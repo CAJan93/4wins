@@ -40,18 +40,7 @@ func playerIntToStrig(p int) string {
 	return playerToString(player(p))
 }
 
-// TODO: Remove this function?
-// stringToPlayer provides mapping from a string to a player
-func stringToPlayer(s string) player {
-	for i, val := range playerMapping {
-		if val == s {
-			return player(i)
-		}
-	}
-	panic("Unsupported player")
-}
-
-// TODO: Move Board struct and methods to other file
+// TODO: Move game struct and methods to other file
 
 // printHelp diplays a helper message
 func (g *game) printHelp() {
@@ -135,7 +124,6 @@ func (g *game) selectMove(reader *bufio.Reader) int {
 	if g.PlayersTurn == 0 {
 		num, err := g.selectHumanMove(reader)
 		if err != nil {
-			fmt.Println(err) // TODO remove line
 			fmt.Println("Invalid input, please try again")
 			g.selectMove(reader)
 		}
@@ -206,8 +194,6 @@ func (g *game) checkKVertical(playerSting string, k int, xPos int, yPos int) boo
 	}
 	return true
 }
-
-// TODO: Test diagonal winnings
 
 // checkKDiagonalDown checks if the next k diagonal to the bottom right
 // fields are equal to playerString
