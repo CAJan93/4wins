@@ -6,6 +6,23 @@ import (
 	"testing"
 )
 
+// Try to catch the error that shows up when first slecting an invalid column
+// Please select a column
+// 9
+// Invalid input, please try again
+// Please select a column
+// 3
+// panic: runtime error: index out of range [-1]
+//
+// goroutine 1 [running]:
+// fourwins/main/src/game.(*Game).fall(0xc0000a1e98, 0xffffffffffffffff, 0x10b8d16, 0xc0000a1e98, 0xc0000a1f20)
+//         /Users/D072532/go/src/4Gewinnt/src/game/game.go:242 +0x16e
+// fourwins/main/src/game.(*Game).DoMove(0xc0000a1e98, 0xffffffffffffffff, 0xffffffffffffffff, 0x0)
+//         /Users/D072532/go/src/4Gewinnt/src/game/game.go:256 +0x3f
+// main.main()
+//         /Users/D072532/go/src/4Gewinnt/src/main/main.go:21 +0x24f
+// make: *** [run] Error 2
+
 func TestUsableBoard(t *testing.T) {
 	g := GetNewGame()
 	if g.Width < 4 {
