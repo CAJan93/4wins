@@ -1,11 +1,11 @@
 all: main
 
 run: main
-	./bin/fourwins
+	./bin/main
 
 main: fmt vet tidy
 	GOPATH=/Users/D072532/Documents/4Gewinnt
-	go build -o bin/fourwins ./... && go version -m bin/fourwins
+	go build -o bin ./...
 
 fmt:
 	go fmt ./... 
