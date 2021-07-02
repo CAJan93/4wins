@@ -15,6 +15,7 @@ import (
 // X wins is 1 	-> X maximizes
 // O wins is -1 -> O minimizes
 // neutral is 0
+// TODO: decode this better
 
 // TODO: Add comments to provided functions
 
@@ -23,12 +24,21 @@ import (
 
 // TODO: for some reason the computer always uses column 0. No idea why
 
-func getAllPossiblePossitions(incomingGame Game) ([]Game, []int) {
+func getAllPossiblePossitions(incomingGame Game, maximizingPlayer bool) ([]Game, []int) {
 	var possibleGameStates []Game
 	var possibleMoves []int
 
 	for column := 0; column < incomingGame.Width; column++ {
 		tmp := incomingGame.copyBoard()
+		if maximizingPlayer { //
+			if tmp.PlayersTurn != misc.StringToPlayer("X") {
+				tmp.AlternatePlayersTurn()
+			}
+		} else {
+			if tmp.PlayersTurn != misc.StringToPlayer("O") {
+				tmp.AlternatePlayersTurn()
+			}
+		}
 		err := tmp.DoMove(column)
 		if err != nil {
 			// full column
@@ -41,14 +51,38 @@ func getAllPossiblePossitions(incomingGame Game) ([]Game, []int) {
 	return possibleGameStates, possibleMoves
 }
 
-func _minmax(position Game, depth int, maximizingPlayer bool, lastMove int) (float64, int) {
+/*
+	TODO
+	If computer wins, value is +Inf?
+		Computer move
+	maximizingplayer is false
+	-------------------------
+	|   |   |   |   |   |   |
+	-------------------------
+	|   |   |   |   |   |   |
+	-------------------------
+	|   |   |   |   |   |   |
+	-------------------------
+	|   |   |   |   |   |   |
+	-------------------------
+	| O |   |   |   |   |   |
+	-------------------------
+	| O |   |   |   |   |   |
+	-------------------------
+	| O |   |   |   |   |   |
+	-------------------------
+	| O |   | X | X | X |   |
+	-------------------------
+	minEval: +Inf, move: 0
+
+	Error was because I was multiplying int with float
+*/
+
+// TODO: There never is an Eval: 10
+func _minmax(position Game, remainingDepth int, maximizingPlayer bool, lastMove int) (float64, int) {
 	// handle winning position
 	won, winningPlayer := position.Won()
 	if won {
-		// for debugging only
-		if lastMove == -1 {
-			position.PrintBoard()
-		}
 		if misc.PlayerToString(winningPlayer) == "X" {
 			return 1, lastMove
 		}
@@ -56,51 +90,61 @@ func _minmax(position Game, depth int, maximizingPlayer bool, lastMove int) (flo
 	}
 
 	// no more search space or no more game space available
-	if depth == 0 || position.BoardFull() {
-		if lastMove == -1 {
-			position.PrintBoard()
-		}
+	if remainingDepth == 0 || position.BoardFull() {
 		return 0, lastMove
 	}
 
 	if maximizingPlayer {
 		maxEval := math.Inf(-1)
 		bestMove := -1
-		gameStates, gameMoves := getAllPossiblePossitions(position)
-		if len(gameStates) == 0 {
-			panic("There should always be possible game states, or the game should be finished")
-		}
+		gameStates, gameMoves := getAllPossiblePossitions(position, maximizingPlayer)
+		var bestChild Game // TODO: remove
 		for i, child := range gameStates {
-			eval, _ := _minmax(child.copyBoard(), depth-1, false, gameMoves[i])
+			eval, _ := _minmax(child, remainingDepth-1, false, gameMoves[i])
 			if eval > maxEval {
 				maxEval = eval
 				bestMove = gameMoves[i]
+				bestChild = child
 			}
+		}
+		if remainingDepth == 7 {
+			bestChild.PrintBoard()
+			fmt.Printf("maxEval: %v, bestMove: %v\n", maxEval, bestMove) // TODO: remove
 		}
 		return maxEval, bestMove
 	}
 
 	minEval := math.Inf(1)
 	bestMove := -1
-	gameStates, gameMoves := getAllPossiblePossitions(position)
-	if len(gameStates) == 0 {
-		panic("There should always be possible game states, or the game should be finished")
-	}
+	gameStates, gameMoves := getAllPossiblePossitions(position, maximizingPlayer)
+	//var bestChild Game // TODO: remove
 	for i, child := range gameStates {
-		eval, _ := _minmax(child.copyBoard(), depth-1, true, gameMoves[i])
-		if eval < minEval {
+		eval, _ := _minmax(child, remainingDepth-1, true, gameMoves[i])
+		if eval < minEval { // TODO: maybe if euqally good 50% chance to take that move
 			minEval = eval
 			bestMove = gameMoves[i]
+			//	bestChild = child // TODO: remove
+		}
+		if remainingDepth == 7 {
+			child.PrintBoard()
+			fmt.Printf("Eval: %v, move: %v\n", eval, gameMoves[i]) // TODO: remove
 		}
 	}
+	// if remainingDepth == 6 {
+	// 	bestChild.PrintBoard()
+	// 	fmt.Printf("minEval: %v, bestMove: %v\n", minEval, bestMove) // TODO: remove
+	// }
 	return minEval, bestMove
 }
 
 func minmax(position Game, depth int, currentPlayer misc.Player) (float64, int) {
+	// TODO: Is the initial call correct? Or do I always have to call with false?
+	// I always call with false -> Computer tries to min my moves, which is correct
 	maximizingPlayer := false
 	if misc.PlayerIntToStrig(int(currentPlayer)) == "X" {
 		maximizingPlayer = true
 	}
+	fmt.Printf("maximizingplayer is %v\n", maximizingPlayer)
 	return _minmax(position, depth, maximizingPlayer, -1)
 }
 
@@ -128,11 +172,12 @@ func (g *Game) PrintHelp() {
 // copyBoard returns a new game with a board identical to g
 func (g *Game) copyBoard() Game {
 	newGame := GetNewGame()
-	newBoard := make([][]string, len(g.Board))
+	copiedBoard := make([][]string, len(g.Board))
 	for i := range g.Board {
-		newBoard[i] = make([]string, len(g.Board[i]))
-		copy(newBoard[i], g.Board[i])
+		copiedBoard[i] = make([]string, len(g.Board[i]))
+		copy(copiedBoard[i], g.Board[i])
 	}
+	newGame.Board = copiedBoard
 	return newGame
 }
 
@@ -181,7 +226,7 @@ func (g *Game) init() {
 // }
 
 func (g *Game) _selectComputerMove() int {
-	_, column := minmax(*g, 3, g.PlayersTurn)
+	_, column := minmax(*g, 7, g.PlayersTurn)
 	return column
 }
 
@@ -239,7 +284,8 @@ func (g *Game) fall(column int) (int, error) {
 func (g *Game) DoMove(column int) error {
 	row, err := g.fall(column)
 	if err != nil {
-		fmt.Printf("Column %v already full. Choose again\n", column)
+		// fmt.Printf("Column %v already full. Choose again\n", column)
+		// TODO: Activate, except during minmax
 		return err
 	}
 	g.Board[row][column] = misc.PlayerToString(g.PlayersTurn)
