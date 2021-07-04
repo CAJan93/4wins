@@ -50,15 +50,54 @@ func TestCheckNextXHorizontal(t *testing.T) {
 	g.init()
 }
 
-func Test_selectComputerMove(t *testing.T) {
+func Test_selectComputerMoveInBound(t *testing.T) {
 	var g Game
 	g.init()
-	for i := 0; i < 100; i++ {
+	for i := 0; i < 5; i++ {
 		selectedMove := g._selectComputerMove()
 		if selectedMove < 0 || selectedMove >= g.Width {
 			t.Errorf("Expected selected move to be [0, g.Width). Selected move was %v", selectedMove)
 		}
 		g.init()
+	}
+}
+
+// Tests obvious decisions, where 3 objects are in a row already
+func Test_selectComputerMoveDecision(t *testing.T) {
+	type testHelper struct {
+		xPos         []int
+		yPos         []int
+		expectedMove int
+	}
+	var g Game
+	g.init()
+	bottom := g.Height - 1
+
+	scenarios := [...]testHelper{
+		// horizontal
+		{[]int{0, 1, 2}, []int{bottom, bottom, bottom}, 3},
+		{[]int{g.Width - 1, g.Width - 2, g.Width - 3}, []int{bottom, bottom, bottom}, g.Width - 4},
+
+		// vertical
+		{[]int{0, 0, 0}, []int{bottom, bottom - 1, bottom - 2}, 0},
+		{[]int{g.Width - 1, g.Width - 1, g.Width - 1}, []int{bottom, bottom - 1, bottom - 2}, g.Width - 1},
+	}
+
+	// do for both players
+	for player := 0; player <= 1; player++ {
+		for _, scenario := range scenarios {
+			for i := 0; i < len(scenario.xPos); i++ {
+				g.Board[scenario.yPos[i]][scenario.xPos[i]] = misc.PlayerIntToStrig(player)
+			}
+			move := g._selectComputerMove()
+			if move != scenario.expectedMove {
+				msg := fmt.Sprintf("Expected move %v, got move %v", scenario.expectedMove, move)
+				g.PrintBoard()
+				fmt.Println(msg)
+				t.Errorf(msg)
+			}
+			g.init()
+		}
 	}
 }
 
