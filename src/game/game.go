@@ -11,12 +11,13 @@ import (
 	"time"
 )
 
-/// minmax ///
 // compare https://www.youtube.com/watch?v=l-hh51ncgDI
 // X wins is 1 	-> X maximizes
 // O wins is -1 -> O minimizes
 // neutral is 0
 // TODO: decode this better
+const MAXIMIZINGPLAYER misc.Player = 0
+const MINIMIZINGPLAYER misc.Player = 1
 
 // TODO: Add comments to provided functions
 
@@ -32,12 +33,12 @@ func getAllPossiblePossitions(incomingGame Game, maximizingPlayer bool) ([]Game,
 
 	for column := 0; column < incomingGame.Width; column++ {
 		tmp := incomingGame.copyBoard()
-		if maximizingPlayer { //
-			if tmp.PlayersTurn != misc.StringToPlayer("X") {
+		if maximizingPlayer {
+			if tmp.PlayersTurn != MAXIMIZINGPLAYER {
 				tmp.AlternatePlayersTurn()
 			}
 		} else {
-			if tmp.PlayersTurn != misc.StringToPlayer("O") {
+			if tmp.PlayersTurn != MINIMIZINGPLAYER {
 				tmp.AlternatePlayersTurn()
 			}
 		}
@@ -53,38 +54,14 @@ func getAllPossiblePossitions(incomingGame Game, maximizingPlayer bool) ([]Game,
 	return possibleGameStates, possibleMoves
 }
 
-/*
-
-maximizingplayer is false
--------------------------
-|   |   |   |   |   |   |
--------------------------
-|   |   |   |   |   |   |
--------------------------
-|   |   |   |   |   |   |
--------------------------
-|   |   |   |   |   |   |
--------------------------
-|   |   |   |   |   |   |
--------------------------
-| O |   |   |   |   |   |
--------------------------
-| O |   |   |   |   |   |
--------------------------
-| O |   | X | X |   |   |
--------------------------
-Eval: 0, move: 0
-This should be negative, not neutral
-*/
-
 func _minmax(position Game, remainingDepth float64, maximizingPlayer bool, lastMove int) (float64, int) {
 	// handle winning position
 	won, winningPlayer := position.Won()
 	if won {
-		if misc.PlayerToString(winningPlayer) == "X" {
-			return 1, lastMove // 1 * remainingDepth
+		if winningPlayer == MAXIMIZINGPLAYER {
+			return 1, lastMove
 		}
-		return -1, lastMove // -1 * remainingDepth
+		return -1, lastMove
 	}
 
 	// no more search space or no more game space available
@@ -96,18 +73,19 @@ func _minmax(position Game, remainingDepth float64, maximizingPlayer bool, lastM
 		maxEval := math.Inf(-1)
 		bestMove := -1
 		gameStates, gameMoves := getAllPossiblePossitions(position, maximizingPlayer)
-		var bestChild Game // TODO: remove
+		n := 2
 		for i, child := range gameStates {
 			eval, _ := _minmax(child, remainingDepth-1, false, gameMoves[i])
 			if eval > maxEval || (eval == maxEval && rand.Intn(10) > 3) {
 				maxEval = eval
 				bestMove = gameMoves[i]
-				bestChild = child
+				n = 2
+			} else if eval == maxEval { // pick equally good move by chance
+				if rand.Intn(n) == 1 {
+					bestMove = gameMoves[i]
+				}
+				n++
 			}
-		}
-		if remainingDepth == 7 {
-			bestChild.PrintBoard()
-			fmt.Printf("maxEval: %v, bestMove: %v\n", maxEval, bestMove) // TODO: remove
 		}
 		return maxEval, bestMove
 	}
@@ -115,32 +93,29 @@ func _minmax(position Game, remainingDepth float64, maximizingPlayer bool, lastM
 	minEval := math.Inf(1)
 	bestMove := -1
 	gameStates, gameMoves := getAllPossiblePossitions(position, maximizingPlayer)
+	n := 2
 	for i, child := range gameStates {
 		eval, _ := _minmax(child, remainingDepth-1, true, gameMoves[i])
 		if eval < minEval || (eval == minEval && rand.Intn(10) > 3) {
 			minEval = eval
 			bestMove = gameMoves[i]
-		}
-		if remainingDepth == 7 {
-			child.PrintBoard()
-			fmt.Printf("Eval: %v, move: %v\n", eval, gameMoves[i]) // TODO: remove
+		} else if eval == minEval { // pick equally good move by chance
+			if rand.Intn(n) == 1 {
+				bestMove = gameMoves[i]
+			}
+			n++
 		}
 	}
 	return minEval, bestMove
 }
 
 func minmax(position Game, depth float64, currentPlayer misc.Player) (float64, int) {
-	// TODO: Is the initial call correct? Or do I always have to call with false?
-	// I always call with false -> Computer tries to min my moves, which is correct
 	maximizingPlayer := false
-	if misc.PlayerIntToStrig(int(currentPlayer)) == "X" {
+	if currentPlayer == MAXIMIZINGPLAYER {
 		maximizingPlayer = true
 	}
-	fmt.Printf("maximizingplayer is %v\n", maximizingPlayer)
 	return _minmax(position, depth, maximizingPlayer, -1)
 }
-
-/// end minmax ///
 
 type Game struct {
 	Board       [][]string
