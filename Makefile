@@ -17,4 +17,7 @@ tidy:
 	go mod tidy
 
 test: 
-	go test ./...
+	go test -timeout 30s -coverprofile cover.out -covermode count ./...
+
+cover: test
+	go tool cover -html cover.out
