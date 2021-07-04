@@ -11,8 +11,10 @@ import (
 	"time"
 )
 
-const MAXIMIZINGPLAYER misc.Player = 0
-const MINIMIZINGPLAYER misc.Player = 1
+const (
+	MAXIMIZINGPLAYER misc.Player = 0
+	MINIMIZINGPLAYER misc.Player = 1
+)
 
 // getAllPossiblePossitions returns all possible branches in a decision inside the minmax tree
 func getAllPossiblePossitions(incomingGame Game, maximizingPlayer bool) ([]Game, []int) {
@@ -181,12 +183,6 @@ func (g *Game) init() {
 	}
 }
 
-// _selectComputerMove selects the column the computer plays at random
-// func (g *Game) _selectComputerMove() int {
-// 	rand.Seed(time.Now().UnixNano())
-// 	return rand.Intn(g.Width)
-// }
-
 func (g *Game) _selectComputerMove() int {
 	_, column := minmax(*g, 7, g.PlayersTurn)
 	return column
@@ -351,7 +347,8 @@ func (g *Game) Won() (bool, misc.Player) {
 			for dir := 0; dir < 3; dir++ {
 				//call each player
 				for i := 0; i <= 1; i++ {
-					if g.checkX(misc.PlayerIntToStrig(i), 4, xPos, yPos, misc.Direction(dir)) {
+					if g.Board[yPos][xPos] != misc.NoPlayerValue &&
+						g.checkX(misc.PlayerIntToStrig(i), 4, xPos, yPos, misc.Direction(dir)) {
 						return true, misc.Player(i)
 					}
 				}
