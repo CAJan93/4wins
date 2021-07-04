@@ -64,6 +64,9 @@ func _minmax(position Game, remainingDepth float64, maximizingPlayer bool, lastM
 		n := 2
 		for i, child := range gameStates {
 			eval, _ := _minmax(child, remainingDepth-1, false, gameMoves[i])
+			if eval == 1 { // stop early on optimal move
+				return 1, gameMoves[i]
+			}
 			if eval > maxEval || (eval == maxEval && rand.Intn(10) > 3) {
 				maxEval = eval
 				bestMove = gameMoves[i]
@@ -84,6 +87,9 @@ func _minmax(position Game, remainingDepth float64, maximizingPlayer bool, lastM
 	n := 2
 	for i, child := range gameStates {
 		eval, _ := _minmax(child, remainingDepth-1, true, gameMoves[i])
+		if eval == -1 {
+			return -1, gameMoves[i]
+		}
 		if eval < minEval || (eval == minEval && rand.Intn(10) > 3) {
 			minEval = eval
 			bestMove = gameMoves[i]
@@ -189,7 +195,7 @@ func (g *Game) _selectComputerMove() int {
 // selectComputerMove is a wraper for _selectComputerMove
 func (g *Game) selectComputerMove() int {
 	fmt.Println("Computer move")
-	time.Sleep(1 * time.Second)
+	time.Sleep(0 * time.Second)
 	return g._selectComputerMove()
 }
 
