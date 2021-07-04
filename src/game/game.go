@@ -11,22 +11,10 @@ import (
 	"time"
 )
 
-// compare https://www.youtube.com/watch?v=l-hh51ncgDI
-// X wins is 1 	-> X maximizes
-// O wins is -1 -> O minimizes
-// neutral is 0
-// TODO: decode this better
 const MAXIMIZINGPLAYER misc.Player = 0
 const MINIMIZINGPLAYER misc.Player = 1
 
-// TODO: Add comments to provided functions
-
-// TODO: getall possible pos should take into account which turn it is
-// maybe also the other functions?
-
-// TODO: for some reason the computer always uses column 0. No idea why
-//			-> because 0 is first option.
-
+// getAllPossiblePossitions returns all possible branches in a decision inside the minmax tree
 func getAllPossiblePossitions(incomingGame Game, maximizingPlayer bool) ([]Game, []int) {
 	var possibleGameStates []Game
 	var possibleMoves []int
@@ -44,8 +32,7 @@ func getAllPossiblePossitions(incomingGame Game, maximizingPlayer bool) ([]Game,
 		}
 		err := tmp.DoMove(column)
 		if err != nil {
-			// full column
-			continue
+			continue // full column
 		}
 		possibleGameStates = append(possibleGameStates, tmp)
 		possibleMoves = append(possibleMoves, column)
@@ -54,6 +41,7 @@ func getAllPossiblePossitions(incomingGame Game, maximizingPlayer bool) ([]Game,
 	return possibleGameStates, possibleMoves
 }
 
+// _minmax function, compare https://www.youtube.com/watch?v=l-hh51ncgDI
 func _minmax(position Game, remainingDepth float64, maximizingPlayer bool, lastMove int) (float64, int) {
 	// handle winning position
 	won, winningPlayer := position.Won()
@@ -109,6 +97,7 @@ func _minmax(position Game, remainingDepth float64, maximizingPlayer bool, lastM
 	return minEval, bestMove
 }
 
+// minmax is a wrapper for _minmax
 func minmax(position Game, depth float64, currentPlayer misc.Player) (float64, int) {
 	maximizingPlayer := false
 	if currentPlayer == MAXIMIZINGPLAYER {
