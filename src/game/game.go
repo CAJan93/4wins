@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"fourwins/main/src/misc"
 	"math"
+	"math/rand"
 	"strconv"
 	"strings"
 	"time"
@@ -23,6 +24,7 @@ import (
 // maybe also the other functions?
 
 // TODO: for some reason the computer always uses column 0. No idea why
+//			-> because 0 is first option.
 
 func getAllPossiblePossitions(incomingGame Game, maximizingPlayer bool) ([]Game, []int) {
 	var possibleGameStates []Game
@@ -52,41 +54,37 @@ func getAllPossiblePossitions(incomingGame Game, maximizingPlayer bool) ([]Game,
 }
 
 /*
-	TODO
-	If computer wins, value is +Inf?
-		Computer move
-	maximizingplayer is false
-	-------------------------
-	|   |   |   |   |   |   |
-	-------------------------
-	|   |   |   |   |   |   |
-	-------------------------
-	|   |   |   |   |   |   |
-	-------------------------
-	|   |   |   |   |   |   |
-	-------------------------
-	| O |   |   |   |   |   |
-	-------------------------
-	| O |   |   |   |   |   |
-	-------------------------
-	| O |   |   |   |   |   |
-	-------------------------
-	| O |   | X | X | X |   |
-	-------------------------
-	minEval: +Inf, move: 0
 
-	Error was because I was multiplying int with float
+maximizingplayer is false
+-------------------------
+|   |   |   |   |   |   |
+-------------------------
+|   |   |   |   |   |   |
+-------------------------
+|   |   |   |   |   |   |
+-------------------------
+|   |   |   |   |   |   |
+-------------------------
+|   |   |   |   |   |   |
+-------------------------
+| O |   |   |   |   |   |
+-------------------------
+| O |   |   |   |   |   |
+-------------------------
+| O |   | X | X |   |   |
+-------------------------
+Eval: 0, move: 0
+This should be negative, not neutral
 */
 
-// TODO: There never is an Eval: 10
-func _minmax(position Game, remainingDepth int, maximizingPlayer bool, lastMove int) (float64, int) {
+func _minmax(position Game, remainingDepth float64, maximizingPlayer bool, lastMove int) (float64, int) {
 	// handle winning position
 	won, winningPlayer := position.Won()
 	if won {
 		if misc.PlayerToString(winningPlayer) == "X" {
-			return 1, lastMove
+			return 1, lastMove // 1 * remainingDepth
 		}
-		return -1, lastMove
+		return -1, lastMove // -1 * remainingDepth
 	}
 
 	// no more search space or no more game space available
@@ -101,7 +99,7 @@ func _minmax(position Game, remainingDepth int, maximizingPlayer bool, lastMove 
 		var bestChild Game // TODO: remove
 		for i, child := range gameStates {
 			eval, _ := _minmax(child, remainingDepth-1, false, gameMoves[i])
-			if eval > maxEval {
+			if eval > maxEval || (eval == maxEval && rand.Intn(10) > 3) {
 				maxEval = eval
 				bestMove = gameMoves[i]
 				bestChild = child
@@ -117,27 +115,21 @@ func _minmax(position Game, remainingDepth int, maximizingPlayer bool, lastMove 
 	minEval := math.Inf(1)
 	bestMove := -1
 	gameStates, gameMoves := getAllPossiblePossitions(position, maximizingPlayer)
-	//var bestChild Game // TODO: remove
 	for i, child := range gameStates {
 		eval, _ := _minmax(child, remainingDepth-1, true, gameMoves[i])
-		if eval < minEval { // TODO: maybe if euqally good 50% chance to take that move
+		if eval < minEval || (eval == minEval && rand.Intn(10) > 3) {
 			minEval = eval
 			bestMove = gameMoves[i]
-			//	bestChild = child // TODO: remove
 		}
 		if remainingDepth == 7 {
 			child.PrintBoard()
 			fmt.Printf("Eval: %v, move: %v\n", eval, gameMoves[i]) // TODO: remove
 		}
 	}
-	// if remainingDepth == 6 {
-	// 	bestChild.PrintBoard()
-	// 	fmt.Printf("minEval: %v, bestMove: %v\n", minEval, bestMove) // TODO: remove
-	// }
 	return minEval, bestMove
 }
 
-func minmax(position Game, depth int, currentPlayer misc.Player) (float64, int) {
+func minmax(position Game, depth float64, currentPlayer misc.Player) (float64, int) {
 	// TODO: Is the initial call correct? Or do I always have to call with false?
 	// I always call with false -> Computer tries to min my moves, which is correct
 	maximizingPlayer := false
