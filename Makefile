@@ -21,3 +21,6 @@ test:
 
 cover: test
 	go tool cover -html cover.out
+
+bench:
+	go test -bench . -benchtime 10s ./...
